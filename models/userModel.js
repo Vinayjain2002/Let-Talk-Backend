@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 const userSchema = mongoose.Schema(
   {
     name: {
@@ -17,18 +17,17 @@ const userSchema = mongoose.Schema(
     },
     bio: {
       type: String,
-      default: "New to Kiara",
+      default: 'Available',
     },
     profilePic: {
       type: String,
       default:
-        "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg",
+        'https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg',
     },
-    tokens: [
+    contacts: [
       {
-        token: {
-          type: String,
-        },
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
       },
     ],
   },
@@ -36,8 +35,8 @@ const userSchema = mongoose.Schema(
     timestamps: true,
   }
 );
-userSchema.pre("save", async function (next) {
-  if (this.isModified("password")) {
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
     this.password = await bcrypt.hash(this.password, 12);
   }
   next();
@@ -46,15 +45,17 @@ userSchema.methods.generateAuthToken = async function () {
   try {
     let token = jwt.sign(
       { id: this._id, email: this.email },
-      process.env.SECRET
+      process.env.SECRET,
+      {
+        expiresIn: '24h',
+      }
     );
-    this.tokens = this.tokens.concat({ token: token });
-    await this.save();
+
     return token;
   } catch (error) {
-    console.log("error while generating token");
+    console.log('error while generating token');
   }
 };
 
-const userModel = mongoose.model("User", userSchema);
+const userModel = mongoose.model('User', userSchema);
 export default userModel;
